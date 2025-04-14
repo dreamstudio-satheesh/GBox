@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+pydantic
+openai
+sqlalchemy[asyncio]
+asyncpg
+pgvector
+redis
+httpx
+pydantic-settings

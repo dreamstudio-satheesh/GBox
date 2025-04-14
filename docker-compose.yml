@@ -1,0 +1,70 @@
+
+services:
+  caddy:
+    image: caddy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+    restart: always
+
+  mailserver:
+    image: mailu/mailu:1.9
+    env_file: ./mailserver/mailu.env
+    restart: always
+    ports:
+      - "25:25"      # SMTP
+      - "465:465"    # SMTPS
+      - "587:587"    # Submission
+      - "993:993"    # IMAPS
+    volumes:
+      - maildata:/data
+    environment:
+      - TZ=Asia/Kolkata
+
+
+  webmail:
+    image: roundcube/roundcubemail
+    restart: always
+    ports:
+      - "8080:80"
+    environment:
+      ROUNDCUBE_DEFAULT_HOST: ssl://mail.yourdomain.in
+      ROUNDCUBE_SMTP_SERVER: tls://mail.yourdomain.in
+
+  postgres:
+    image: ankane/pgvector
+    volumes:
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    environment:
+      POSTGRES_DB: maildb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: securepass
+
+  redis:
+    image: redis
+    restart: always
+
+  fastapi:
+    build: ./backend
+    volumes:
+      - ./backend:/app
+    env_file: .env
+    depends_on:
+      - postgres
+      - redis
+    restart: always
+
+  frontend:
+    build: ./frontend
+    volumes:
+      - ./frontend:/app
+    ports:
+      - "8501:8501"
+    restart: always
+
+volumes:
+  caddy_data:
+  maildata:
